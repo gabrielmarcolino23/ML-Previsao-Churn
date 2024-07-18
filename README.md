@@ -1,1 +1,1 @@
-# data-science-challenges-alura
+# churn-prediction
