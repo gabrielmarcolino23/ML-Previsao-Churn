@@ -1,6 +1,6 @@
 # Previsão de Churn
 
-Este projeto visa desenvolver um modelo de machine learning para prever a evasão de clientes (churn), utilizando os algoritmos Random Forest, SVM e Decision Tree. O objetivo é identificar quais clientes estão propensos a deixar a empresa, para que a equipe de vendas possa tomar medidas proativas.
+Este projeto visa desenvolver um modelo de machine learning para prever a evasão de clientes (churn), utilizando os algoritmos Random Forest, SVC e Decision Tree. O objetivo é identificar quais clientes estão propensos a deixar a empresa, para que a equipe de vendas possa tomar medidas proativas.
 
 ## Dados
 
@@ -81,7 +81,7 @@ Após a otimização, o modelo Random Forest apresentou os seguintes resultados:
 ### Matrizes de Confusão
 
 #### SVC
-![Matriz de Confusão SVM](imgs/svc.png)
+![Matriz de Confusão SVC](imgs/svc.png)
 
 #### Decision Tree
 ![Matriz de Confusão Decision Tree](imgs/dt.png)
