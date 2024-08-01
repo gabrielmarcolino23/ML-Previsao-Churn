@@ -65,7 +65,7 @@ O notebook pode ser encontrado [aqui](otimizacao.ipynb).
 
 | Modelo         | Acurácia (Treino) | Acurácia (Teste) | Precisão | Recall | F1 Score |
 |----------------|-------------------|------------------|----------|--------|----------|
-| SVM            | 0.751             | 0.749            | 0.721    | 0.791  | 0.755    |
+| SVC            | 0.751             | 0.749            | 0.721    | 0.791  | 0.755    |
 | Decision Tree  | 0.809             | 0.800            | 0.795    | 0.795  | 0.795    |
 | Random Forest  | 0.818             | 0.795            | 0.755    | 0.860  | 0.804    |
 
