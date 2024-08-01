@@ -1,0 +1,268 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from imblearn.over_sampling import SMOTE
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix,  accuracy_score, precision_score, recall_score, f1_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+dados = pd.read_json('Telco-Customer-Churn-limpeza.json')
+
+dados.drop(['ID_Cliente', 'Cobranca_Total', 'Cobranca_Diaria'], axis=1, inplace=True)
+
+for i in dados.select_dtypes(include=['object']).columns:
+    if len(dados[i].unique()) > 2:
+       print(f"{i}: {dados[i].unique()}")
+
+olunas = ['Metodo_Pagamento', 'Contrato', 'Servico_Internet']
+dados2 = dados.drop(colunas, axis=1)
+dados2.columns
+
+
+encoding = {'No internet service':0,
+              'No phone service': 0,
+              'No': 0,
+              'Yes': 1,
+              'Male':0,
+              'Female':1}
+
+
+dados2 = dados2.replace(encoding)
+dados2.head()
+
+
+# OneHotEncoder
+ohe = OneHotEncoder(dtype=int)
+
+colunas_ohe = ohe.fit_transform(dados[colunas]).toarray()
+dados3 = pd.concat([dados2, pd.DataFrame(colunas_ohe, columns=ohe.get_feature_names_out(colunas))], axis=1)
+dados3
+
+
+#Distruição de Churn antes do balanceamento
+
+plt.figure(figsize=(10, 6))
+ax = sns.countplot(x='Churn', hue='Churn', data=dados, palette='viridis', dodge=False)
+
+ax.set_title('Distribuição de Churn')
+ax.set_ylabel('Quantidade')
+
+for p in ax.patches:
+    ax.annotate(f'\n{p.get_height()}', (p.get_x()+0.2, p.get_height()), ha='center', va='top', color='white', size=12)
+
+plt.show()
+
+SEED = 42
+
+# balanceamento usando smote
+
+X = dados3.drop('Churn', axis=1)
+y = dados3['Churn']
+
+smote = SMOTE(random_state=SEED)
+
+X_resampled, y_resampled = smote.fit_resample(X, y)
+
+
+dados4 = pd.concat([pd.DataFrame(X_resampled), pd.DataFrame(y_resampled)], axis=1)
+
+
+# Distribuição de Churn após o balanceamento
+
+plt.figure(figsize=(10, 6))
+ax = sns.countplot(x='Churn', hue='Churn', data=dados4, palette='viridis', dodge=False)
+
+ax.set_title('Distribuição de Churn após o balanceamento')
+ax.set_ylabel('Quantidade')
+
+for p in ax.patches:
+    ax.annotate(f'\n{p.get_height()}', (p.get_x()+0.2, p.get_height()), ha='center', va='top', color='white', size=12)
+
+plt.show()
+
+
+# Separando dados de treino e teste
+
+X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.3, random_state=SEED)
+
+# SVG (Support Vector Machine) - Basicamente é um classificador que encontra o hiperplano que melhor separa duas classes no espaço de atributos
+
+svc = SVC(random_state=SEED) # Criação do modelo
+svc.fit(X_train, y_train) # Treinamento do modelo
+y_pred_svg = svc.predict(X_test) # Predição do modelo
+
+cm = confusion_matrix(y_test, y_pred_svg)
+accuracy = accuracy_score(y_test, y_pred_svg)
+precision = precision_score(y_test, y_pred_svg)
+recall = recall_score(y_test, y_pred_svg)
+f1 = f1_score(y_test, y_pred_svg)
+
+variaveis = ['Churn', 'Não Churn']
+labels = ['Verdadeiro Positivo', 'Falso Negativo', 'Falso Positivo', 'Verdadeiro Negativo']
+
+#Plotando a matriz de confusão
+
+plt.figure(figsize=(10, 6))
+ax = sns.heatmap(cm, annot=True, fmt='d', cmap='viridis', cbar_kws={'label': 'Valores'})
+
+# Configurando os rótulos dos eixos
+ax.set_xticklabels(['Não Churn', 'Churn'])
+ax.set_yticklabels(['Não Churn', 'Churn'])
+plt.xlabel('Valores preditos')
+plt.ylabel('Valores verdadeiros')
+
+plt.title('Matriz de Confusão para o Classificador SVC')
+
+plt.text(1.5, 0.5, f'Acurácia={accuracy:.3f}\nPrecisão={precision:.3f}\nRecall={recall:.3f}\nF1 Score={f1:.3f}',
+         horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=12)
+
+plt.show()
+
+
+dtree = DecisionTreeClassifier(max_depth=5, random_state=SEED)
+dtree.fit(X_train, y_train)
+y_pred_dt = dtree.predict(X_test)
+
+cm = confusion_matrix(y_test, y_pred_dt)
+accuracy = accuracy_score(y_test, y_pred_dt)
+precision = precision_score(y_test, y_pred_dt)
+recall = recall_score(y_test, y_pred_dt)
+f1 = f1_score(y_test, y_pred_dt)
+
+variaveis = ['Churn', 'Não Churn']
+labels = ['Verdadeiro Positivo', 'Falso Negativo', 'Falso Positivo', 'Verdadeiro Negativo']
+
+#Plotando a matriz de confusão
+
+plt.figure(figsize=(10, 6))
+ax = sns.heatmap(cm, annot=True, fmt='d', cmap='viridis', cbar_kws={'label': 'Valores'})
+
+# Configurando os rótulos dos eixos
+ax.set_xticklabels(['Não Churn', 'Churn'])
+ax.set_yticklabels(['Não Churn', 'Churn'])
+plt.xlabel('Valores preditos')
+plt.ylabel('Valores verdadeiros')
+
+plt.title('Matriz de Confusão para o Classificador Decision Tree')
+
+plt.text(1.5, 0.5, f'Acurácia={accuracy:.3f}\nPrecisão={precision:.3f}\nRecall={recall:.3f}\nF1 Score={f1:.3f}',
+         horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=12)
+
+plt.show()
+
+
+rforest = RandomForestClassifier(max_depth=5, random_state=SEED)
+rforest.fit(X_train, y_train)
+y_pred_rf = rforest.predict(X_test)
+
+cm = confusion_matrix(y_test, y_pred_rf)
+accuracy = accuracy_score(y_test, y_pred_rf)
+precision = precision_score(y_test, y_pred_rf)
+recall = recall_score(y_test, y_pred_rf)
+f1 = f1_score(y_test, y_pred_rf)
+
+variaveis = ['Churn', 'Não Churn']
+labels = ['Verdadeiro Positivo', 'Falso Negativo', 'Falso Positivo', 'Verdadeiro Negativo']
+
+#Plotando a matriz de confusão
+
+plt.figure(figsize=(10, 6))
+ax = sns.heatmap(cm, annot=True, fmt='d', cmap='viridis', cbar_kws={'label': 'Valores'})
+
+# Configurando os rótulos dos eixos
+ax.set_xticklabels(['Não Churn', 'Churn'])
+ax.set_yticklabels(['Não Churn', 'Churn'])
+plt.xlabel('Valores preditos')
+plt.ylabel('Valores verdadeiros')
+
+plt.title('Matriz de Confusão para o Classificador Random Forest')
+
+plt.text(1.5, 0.5, f'Acurácia={accuracy:.3f}\nPrecisão={precision:.3f}\nRecall={recall:.3f}\nF1 Score={f1:.3f}',
+         horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=12)
+
+plt.show()
+
+
+
+# Comparando os modelos 
+
+modelos = ['SVC', 'Decision Tree', 'Random Forest']
+acuracia_train = [svc.score(X_train, y_train), dtree.score(X_train, y_train), rforest.score(X_train, y_train)]
+acuracia_test = [accuracy_score(y_test, y_pred_svg), accuracy_score(y_test, y_pred_dt), accuracy_score(y_test, y_pred_rf)]
+precisao = [precision_score(y_test, y_pred_svg), precision_score(y_test, y_pred_dt), precision_score(y_test, y_pred_rf)]
+recall = [recall_score(y_test, y_pred_svg), recall_score(y_test, y_pred_dt), recall_score(y_test, y_pred_rf)]
+f1 = [f1_score(y_test, y_pred_svg), f1_score(y_test, y_pred_dt), f1_score(y_test, y_pred_rf)]
+
+df = pd.DataFrame({'Modelo': modelos,'Acurácia Treino': acuracia_train, 'Acurácia Teste': acuracia_test, 'Precisão': precisao, 'Recall': recall, 'F1 Score': f1})
+df
+
+
+#otimização
+X = dados.drop(['Churn'], axis=1)
+y = dados['Churn']
+
+x_train, x_test, y_train, y_test = train_test_split(X, y, random_state=SEED)
+
+
+n_estimators = np.arange(100, 200, step=20)	
+criterion = ["gini", "entropy"]  
+max_features = ["auto", "log2"]
+max_depth = list(np.arange(2, 10, step=2))
+min_samples_split = np.arange(2, 10, step=2)
+min_samples_leaf = [2, 4]
+bootstrap = [True, False]
+
+parameters = {
+    "n_estimators": n_estimators,
+    "criterion": criterion,
+    "max_features": max_features,
+    "max_depth": max_depth,
+    "min_samples_split": min_samples_split,
+    "min_samples_leaf": min_samples_leaf,
+    "bootstrap": bootstrap,
+}
+
+clf = GridSearchCV(RandomForestClassifier(random_state=SEED), parameters, cv=3, n_jobs=-1, scoring="recall")
+clf.fit(x_train, y_train)  # ajuste com os dados de treino
+
+pd.DataFrame(clf.cv_results_).sort_values(by="rank_test_score").head()
+
+clf.best_params_
+
+rforest = RandomForestClassifier(**clf.best_params_, random_state=SEED)
+
+model = rforest.fit(x_train, y_train)  # treinamento com os dados de treino
+y_pred = rforest.predict(x_test)  # realizando as predições
+
+cm = confusion_matrix(y_test, y_pred)
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+
+variaveis = ['Churn', 'Não Churn']
+labels = ['Verdadeiro Positivo', 'Falso Negativo', 'Falso Positivo', 'Verdadeiro Negativo']
+
+#Plotando a matriz de confusão
+
+plt.figure(figsize=(10, 6))
+ax = sns.heatmap(cm, annot=True, fmt='d', cmap='viridis', cbar_kws={'label': 'Valores'})
+
+# Configurando os rótulos dos eixos
+ax.set_xticklabels(['Não Churn', 'Churn'])
+ax.set_yticklabels(['Não Churn', 'Churn'])
+plt.xlabel('Valores preditos')
+plt.ylabel('Valores verdadeiros')
+
+plt.title('Matriz de Confusão para o Classificador Decision Tree')
+
+plt.text(1.5, 0.5, f'Acurácia={accuracy:.3f}\nPrecisão={precision:.3f}\nRecall={recall:.3f}\nF1 Score={f1:.3f}',
+         horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=12)
+
+plt.show()
+
+print(f"Acurácia de treinamento: {rforest.score(x_train, y_train) * 100:.2f}%")  # Verificando a acurácia de treinamento
