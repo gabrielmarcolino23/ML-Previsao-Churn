@@ -80,7 +80,7 @@ Após a otimização, o modelo Random Forest apresentou os seguintes resultados:
 
 ### Matrizes de Confusão
 
-#### SVM
+#### SVC
 ![Matriz de Confusão SVM](imgs/svc.png)
 
 #### Decision Tree
